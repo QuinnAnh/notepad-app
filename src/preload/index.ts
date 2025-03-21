@@ -1,5 +1,5 @@
-import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge } from 'electron'
 
 // Custom APIs for renderer
 const api = {}
@@ -9,8 +9,9 @@ const api = {}
 // just add to the DOM global.
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('context', {
+      // TODO
+    })
   } catch (error) {
     console.error(error)
   }
