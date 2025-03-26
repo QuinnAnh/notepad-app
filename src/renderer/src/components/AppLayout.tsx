@@ -1,12 +1,17 @@
 import { ComponentProps, forwardRef } from 'react'
 import { twMerge } from 'tailwind-merge'
 
-export const AppLayout = ({ className, children, ...props }: ComponentProps<'aside'>) => {
+export const RootLayout = ({ className, children, ...props }: ComponentProps<'main'>) => {
   return (
-    <aside
-      className={twMerge('w-[250px] mt-10 h-[100vh + 10px] overflow-auto', className)}
-      {...props}
-    >
+    <main className={twMerge('flex flex-row h-screen')} {...props}>
+      {children}
+    </main>
+  )
+}
+
+export const Sidebar = ({ className, children, ...props }: ComponentProps<'aside'>) => {
+  return (
+    <aside className={twMerge('w-[250px] h-[100vh + 10px] overflow-auto', className)} {...props}>
       {children}
     </aside>
   )
