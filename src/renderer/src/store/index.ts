@@ -1,9 +1,20 @@
+import { NoteInfo } from '@shared/models'
 import { atom } from 'jotai'
+import { unwrap } from 'jotai/utils'
+import { notesMock } from './mocks'
 
-export const notesAtom = atom(async () => {
+const loadNotes = async () => {
   const notes = await window.context.getNotes()
+
+  // sort them by most recently edited
   return notes.sort((a, b) => b.lastEditTime - a.lastEditTime)
-})
+}
+
+const notesAtomAsync = atom<NoteInfo[] | Promise<NoteInfo[]>>(loadNotes())
+
+export const notesAtom = unwrap(notesAtomAsync, (prev) => prev)
+
+export const notesAtom1 = atom<NoteInfo[] | null>(notesMock)
 
 export const selectedNoteIndexAtom = atom<number | null>(null)
 
@@ -20,52 +31,31 @@ export const selectedNoteAtom = atom((get) => {
   }
 })
 
-// export const createNoteAtom = atom(null, (get, set) => {
-//   const notes = get(notesAtom)
+export const createNoteAtom = atom(null, (get, set) => {
+  const notes = get(notesAtom)
 
-//   if (!notes) return
+  if (!notes) return
 
-//   const title = `Note ${notes.length + 1}`
-//   const newNote = {
-//     title,
-//     lastEditTime: Date.now()
-//   }
-//   set(notesAtom, [newNote, ...notes.filter((note) => note.title !== newNote.title)])
+  const title = `Note ${notes.length + 1}`
+  const newNote = {
+    title,
+    lastEditTime: Date.now()
+  }
+  set(notesAtom, [newNote, ...notes.filter((note) => note.title !== newNote.title)])
 
-//   set(selectedNoteIndexAtom, 0)
-// })
+  set(selectedNoteIndexAtom, 0)
+})
 
-// export const createNoteAtom = atom(
-//   null,
-//   async (get, set) => {
-//     const notes = await get(notesAtom);
-//     if (!notes) return;
+export const deleteNoteAtom = atom(null, (get, set) => {
+  const notes = get(notesAtom)
+  const selectedNote = get(selectedNoteAtom)
 
-//     const title = `Note ${notes.length + 1}`;
-//     const newNote = {
-//       title,
-//       lastEditTime: Date.now()
-//     };
+  if (!selectedNote || !notes) return
 
-//     set(
-//       notesAtom,
-//       [newNote, ...notes.filter((note) => note.title !== newNote.title)]
-//     );
+  set(
+    notesAtom,
+    notes.filter((note) => note.title !== selectedNote.title)
+  )
 
-//     set(selectedNoteIndexAtom, 0);
-//   }
-// );
-
-// export const deleteNoteAtom = atom(null, (get, set) => {
-//   const notes = get(notesAtom)
-//   const selectedNote = get(selectedNoteAtom)
-
-//   if (!selectedNote || !notes) return
-
-//   set(
-//     notesAtom,
-//     notes.filter((note) => note.title !== selectedNote.title)
-//   )
-
-//   set(selectedNoteIndexAtom, null)
-// })
+  set(selectedNoteIndexAtom, null)
+})

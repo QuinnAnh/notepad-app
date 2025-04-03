@@ -5,7 +5,7 @@ import { ensureDir, readdir, stat } from 'fs-extra'
 
 export const getRootDir = () => {
   const rootDir = process.cwd()
-  return `${rootDir}/${appDirectoryName}`
+  return `${rootDir}\\${appDirectoryName}`
 }
 
 export const getNotes: GetNotes = async () => {
