@@ -71,3 +71,23 @@ export const deleteNoteAtom = atom(null, (get, set) => {
 
   set(selectedNoteIndexAtom, null)
 })
+
+export const saveNoteAtom = atom(null, async (get, set, newContent: string) => {
+  const notes = get(notesAtom)
+  const selectedNote = get(selectedNoteAtom)
+
+  if (!selectedNote || !notes) return
+
+  const newNote = {
+    ...selectedNote,
+    content: newContent,
+    lastEditTime: Date.now()
+  }
+
+  await window.context.writeNote(newNote.title, newContent)
+
+  set(
+    notesAtom,
+    notes.map((note) => (note.title === newNote.title ? newNote : note))
+  )
+})

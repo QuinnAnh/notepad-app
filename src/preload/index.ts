@@ -1,5 +1,5 @@
 import { electronAPI } from '@electron-toolkit/preload'
-import { GetNotes, ReadNote } from '@shared/types'
+import { GetNotes, ReadNote, WriteNote } from '@shared/types'
 import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
@@ -15,7 +15,8 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('context', {
       locale: navigator.language,
       getNotes: (...args: Parameters<GetNotes>) => ipcRenderer.invoke('getNotes', ...args),
-      readNote: (...args: Parameters<ReadNote>) => ipcRenderer.invoke('readNote', ...args)
+      readNote: (...args: Parameters<ReadNote>) => ipcRenderer.invoke('readNote', ...args),
+      writeNote: (...args: Parameters<WriteNote>) => ipcRenderer.invoke('writeNote', ...args)
     })
     console.log('Done try-catch context isolation')
   } catch (error) {
