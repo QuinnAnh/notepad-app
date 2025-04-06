@@ -21,7 +21,6 @@
     "build:linux": "electron-vite build && electron-builder --linux"
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
     "@mdxeditor/editor": "^3.29.1",
     "fs-extra": "^11.2.0",
@@ -31,6 +30,7 @@
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.0.0",
+    "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@tailwindcss/typography": "github:tailwindcss/typography",
     "@types/node": "^22.13.4",
