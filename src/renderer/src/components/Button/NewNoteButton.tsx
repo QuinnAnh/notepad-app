@@ -6,9 +6,10 @@ import { LuFileSignature } from 'react-icons/lu'
 function NewNoteButton({ ...props }: ActionButtonProps) {
   const createEmptyNote = useSetAtom(createNoteAtom)
 
-  const handleCreation = () => {
-    createEmptyNote()
+  const handleCreation = async () => {
+    await createEmptyNote()
   }
+
   return (
     <ActionButton onClick={handleCreation} {...props}>
       <LuFileSignature className="w-4 h-4 text-zinc-300" />
