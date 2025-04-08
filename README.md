@@ -1,12 +1,25 @@
-# notepad-app
+# Notepad App
 
 An Electron application with React and TypeScript
+Notepad is an Electron application with React and TypeScript, a simple app that allows you to take notes, save notes, and delete notes with the support of syntax notes.
 
-## Recommended IDE Setup
+<img width="100%" alt="notepad application" src="./resources/application.png">
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+## Table of content
 
-## Project Setup
+- Technologies
+- Project structure
+- Project setup
+- Hightlighted Note
+
+## Technologies
+
+- React
+- Typescript
+- Jotai
+- Tailwind
+
+## Project setup
 
 ### Install
 

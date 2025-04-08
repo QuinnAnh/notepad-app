@@ -9,6 +9,7 @@ export const RootLayout = ({ className, children, ...props }: ComponentProps<'ma
   )
 }
 
+// The component returns an <aside> element, which semantically represents a portion of the page such as a sidebar, complementary content, or additional information.
 export const Sidebar = ({ className, children, ...props }: ComponentProps<'aside'>) => {
   return (
     <aside className={twMerge('w-[250px] h-[100vh + 10px] overflow-auto', className)} {...props}>
