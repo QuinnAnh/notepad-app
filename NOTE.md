@@ -4,6 +4,10 @@ Electron is a framework for building desktop applications using JavaScript, HTML
 
 ## Jotai
 
+Jotai is a minimalistic state management library for React. It revolves around the concept of atoms—small, isolated pieces of state—which can be shared and updated throughout your application.
+`atom`: in Jotai is a unit of state. You define an atom using Jotai’s atom function, and it encapsulates a piece of state which can be read and modified by various components. The primary function from Jotai to create state atoms, which can store both synchronous and asynchronous state.
+`unwrap`: A utility from Jotai used to convert an asynchronous atom (one that may hold a Promise) into one that “unwraps” the promise. This allows consuming components to read the atom without dealing with the promise directly.
+
 ## twMerge
 
 twMerge is used to merge Tailwind CSS class names while handling potential conflicts or duplicates. When you pass multiple class strings to it, the function combines them into a single class string. If there are conflicting classes (for example, two classes that set the same property with different values), twMerge will determine which one should take priority based on its internal rules.
@@ -90,3 +94,78 @@ These classes, often part of a typography plugin, format the content (paragraphs
 
 `prose-code:px-1 prose-code:text-red-500 prose-code:before:content-[''] prose-code:after:content-['']`:
 Specifically styles inline code elements with padding, a red color, and additional pseudo-element configuration for aesthetics.
+
+## Set up state
+
+1. Define type in `src/shared/types`
+
+```javascript
+export type GetNotes = () => Promise<NoteInfo[]>
+```
+
+2. Write a function to get a note.md in `src/main/lib/index`
+
+```javascript
+export const getNotes: GetNotes = async () => {
+  const rootDir = getRootDir()
+  await ensureDir(rootDir)
+
+  const notesFileNames = await readdir(rootDir, {
+    encoding: 'utf-8',
+    withFileTypes: false
+  })
+
+  const notes = notesFileNames.filter((fileName) => fileName.endsWith('.md'))
+
+  if (isEmpty(notes)) {
+    const content = await readFile(welcomeNoteFile, { encoding: fileEncoding })
+    await writeFile(`${rootDir}\\Welcome.md`, content, { encoding: fileEncoding })
+
+    notes.push(welcomeNoteFile)
+  }
+
+  return Promise.all(notes.map(getNoteInfoFromFilename))
+}
+```
+
+3. Add `ipc.handle` for the function when the app is ready in `src/main/index.js`
+
+```javascript
+  ipcMain.handle('getNotes', (_, ...args: Parameters<GetNotes>) => getNotes(...args))
+```
+
+4. `src/preload/index.ts`
+
+```javascript
+contextBridge.exposeInMainWorld('context', {
+      locale: navigator.language,
+      getNotes: (...args: Parameters<GetNotes>) => ipcRenderer.invoke('getNotes', ...args)
+})
+```
+
+5. `src/preload/index.d.ts`
+
+```javascript
+declare global {
+  interface Window {
+    // electron: ElectronAPI
+    context: {
+      locale: string
+      getNotes: GetNotes
+    }
+  }
+}
+```
+
+6. `src/renderer/store/index.ts`
+
+```javascript
+const loadNotes = async () => {
+  const notes = await window.context.getNotes()
+  return notes.sort((a, b) => b.lastEditTime - a.lastEditTime)
+}
+
+const notesAtomAsync = atom<NoteInfo[] | Promise<NoteInfo[]>>(loadNotes())
+
+export const notesAtom = unwrap(notesAtomAsync, (prev) => prev)
+```

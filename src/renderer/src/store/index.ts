@@ -2,6 +2,8 @@ import { NoteInfo } from '@shared/models'
 import { atom } from 'jotai'
 import { unwrap } from 'jotai/utils'
 
+// an asynchronous function that calls window.context.getNotes() to fetch an array of notes
+// after fetching, it sorts the notes in descending order based on their lastEditTime, so that the most recently edited note comes first
 const loadNotes = async () => {
   const notes = await window.context.getNotes()
 
@@ -9,8 +11,10 @@ const loadNotes = async () => {
   return notes.sort((a, b) => b.lastEditTime - a.lastEditTime)
 }
 
+//an atom that holds either an array of NoteInfo objects or a promise that resolves to such an array. It is immediately initialized by calling loadNotes(), so it starts with a promise that will eventually resolve with the loaded and sorted notes
 const notesAtomAsync = atom<NoteInfo[] | Promise<NoteInfo[]>>(loadNotes())
 
+// this exports a version of the atom where the asynchronous value is “unwrapped.” The unwrap utility helps transform the atom so that when the notes are loaded, consuming components can work with the resolved value directly rather than handling a promise
 export const notesAtom = unwrap(notesAtomAsync, (prev) => prev)
 
 // export const notesAtom = atom<NoteInfo[] | null>(notesMock)
@@ -32,6 +36,8 @@ const selectedNoteAtomAsync = atom(async (get) => {
   }
 })
 
+//this exports a version of the atom where the asynchronous value is “unwrapped”
+// the unwrap utility helps transform the atom so that when the notes are loaded, consuming components can work with the resolved value directly rather than handling a promise
 export const selectedNoteAtom = unwrap(
   selectedNoteAtomAsync,
   (prev) =>
