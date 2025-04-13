@@ -1,6 +1,84 @@
+## Table of content
+
+1. [Electron](#electron)
+2. [Jotai](#jotai)
+3. [twMerge](#twmerge)
+4. [MDXEditor](#mdxeditor)
+5. [Set up state](#set-up-state)
+
 ## Electron
 
 Electron is a framework for building desktop applications using JavaScript, HTML, and CSS. By embedding Chromium and Node.js into its binary, Electron allows you to maintain one JavaScript codebase and create cross-platform apps that work on Windows, macOS, and Linux — no native development experience required.
+
+- Main Process (`src/main/`):
+  Contains the core application logic, window management, and system interactions. The `index.ts` is the entry point, with additional utilities organized in the lib folder.
+
+- Preload Script (`src/preload/`):
+  Serves as a secure bridge between the main and renderer processes. Use Electron’s contextBridge.exposeInMainWorld to expose a limited and secure API (for example, file operations or data fetching) to the renderer. It exposes a controlled API (documented via `index.d.ts`) to the renderer, ensuring safety and type-checking.
+
+- Renderer Process (`src/renderer/`):
+  Implements the application's user interface. It interacts with the exposed API from the preload script and handles all client-side logic.
+
+- `tsconfig.web.json`:
+  Configures TypeScript for web (renderer) code—handles React and JSX, sets up path aliases for the renderer, and includes files specific to the UI.
+
+  - Inheritance:
+    It extends a base configuration from @electron-toolkit/tsconfig/tsconfig.web.json, which contains common settings for the renderer environment.
+
+  - Key Settings:
+
+    `include`:
+    Specifies the files to include when compiling the renderer code. It includes type declarations (env.d.ts), all source files inside the renderer folder (including TSX files), and shared code.
+
+    `jsx`:
+    Set to "react-jsx" so that JSX syntax can be processed with the new JSX transform introduced in React 17+.
+
+    `paths`:
+    Defines path aliases, making imports clearer and maintaining organization. For example, @renderer/_ maps to the renderer source folder; @shared/_ maps to shared code.
+
+- `tsconfig.node.json`:
+  Configures TypeScript for Node.js (main process and preload) code—includes Electron and Node types, sets up different path aliases, and ensures that the main logic is compiled correctly.
+
+  - Inheritance:
+    Extends a base config from @electron-toolkit/tsconfig/tsconfig.node.json, ensuring that Node.js-specific settings and module resolution work as expected.
+
+  - Key Settings:
+
+    - `include`:
+      Lists files specific to the main process, preload scripts, and any shared code necessary for backend operations. Notice files like electron.vite.config.\* and code within src/main/ are included.
+
+    - `types`:
+      The "electron-vite/node" type definitions are included, ensuring that Node.js and Electron-specific globals or APIs are properly typed.
+
+    - `paths`:
+      Provides aliasing for the main process code (e.g., @/_ for src/main/_), making module imports more manageable.
+
+- `electron.vite.config.ts`:
+  Directs the build process with electron-vite, providing distinct configurations for bundling the main process, preload scripts, and renderer code. It integrates Vite plugins and sets up module aliases to align with your TypeScript configuration.
+  Environment Specific Configurations: It separates the configuration for each part of the Electron app: main, preload, and renderer.
+
+  - Key Config Sections:
+
+    - `main`:
+
+      - Plugins:
+        Uses plugins such as `externalizeDepsPlugin()` that help in managing dependencies so that native Node.js modules are not bundled unnecessarily.
+
+      - Resolve.alias:
+        Defines alias mappings for the main process (e.g.,`@/lib` and `@shared`), aligning with the paths set in `tsconfig.node.json`.
+
+    - `preload`:
+
+      - Plugins:
+        Also applies `externalizeDepsPlugin()` to the preload scripts, ensuring that dependencies are properly handled during the bundle.
+
+    - `renderer`:
+
+      - Assets & Resolve:
+        Configures asset inclusion (like images or styles) and sets up alias mappings (for example, `@renderer`, `@/hooks`, `@/store`, etc.) to simplify module imports.
+
+      - Plugins:
+        Integrates the React plugin (`@vitejs/plugin-react`), enabling fast refresh and proper JSX transformation.
 
 ## Jotai
 
@@ -103,7 +181,7 @@ Specifically styles inline code elements with padding, a red color, and addition
 export type GetNotes = () => Promise<NoteInfo[]>
 ```
 
-2. Write a function to get a note.md in `src/main/lib/index`
+2. Implement the function to retrieve notes in `src/main/lib/index`
 
 ```javascript
 export const getNotes: GetNotes = async () => {
@@ -128,13 +206,13 @@ export const getNotes: GetNotes = async () => {
 }
 ```
 
-3. Add `ipc.handle` for the function when the app is ready in `src/main/index.js`
+3. Set up inter-process communication (IPC) handlers using Electron’s `ipcMain.handle` for the function when the app is ready in `src/main/index.js`. `ipcMain.handle` registers an asynchronous handler for a specified IPC channel.
 
 ```javascript
   ipcMain.handle('getNotes', (_, ...args: Parameters<GetNotes>) => getNotes(...args))
 ```
 
-4. `src/preload/index.ts`
+4. Expose a secure API from the Electron main process to the renderer process using Electron’s `contextBridge` in `src/preload/index.ts`. It makes a set of functionalities available on the global window object without exposing the full Node.js or Electron internals. The `contextBridge.exposeInMainWorld` API is used in Electron’s preload script to safely expose selected methods and properties to the renderer process. This way, you can provide a well-defined, limited API while isolating the renderer from direct access to Node.js and Electron internals, thereby enhancing security.
 
 ```javascript
 contextBridge.exposeInMainWorld('context', {
@@ -143,7 +221,7 @@ contextBridge.exposeInMainWorld('context', {
 })
 ```
 
-5. `src/preload/index.d.ts`
+5. Declaration that augments the global Window interface, ensuring that the custom property expose on the global window object has well-defined types. It's typically placed in a declaration file `src/preload/index.d.ts` to inform TypeScript about properties added by preload script.
 
 ```javascript
 declare global {
@@ -157,7 +235,7 @@ declare global {
 }
 ```
 
-6. `src/renderer/store/index.ts`
+6. Create and configure the notes state in `src/renderer/store/index.ts`.
 
 ```javascript
 const loadNotes = async () => {
@@ -168,4 +246,10 @@ const loadNotes = async () => {
 const notesAtomAsync = atom<NoteInfo[] | Promise<NoteInfo[]>>(loadNotes())
 
 export const notesAtom = unwrap(notesAtomAsync, (prev) => prev)
+```
+
+7. consuming the state in a component. For example in `src\renderer\src\hooks\useNotesList.tsx`:
+
+```javascript
+const notes = useAtomValue(notesAtom)
 ```
